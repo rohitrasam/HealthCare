@@ -8,7 +8,6 @@ from ..doctor.serializers import DoctorSerializer
 from .models import Mapping
 from ..patient.models import Patient
 from .serializers import MappingSerializer
-# Create your views here.
 
 class ListCreateMappingView(generics.ListCreateAPIView):
 

@@ -9,8 +9,6 @@ from ..doctor.models import Doctor
 from ..patient.serializers import PatientSerializer
 from ..doctor.serializers import DoctorSerializer
 
-# Create your views here.
-
 
 class BaseListCreateView(generics.ListCreateAPIView):
     
@@ -53,21 +51,28 @@ class BaseDetailsView(generics.RetrieveUpdateDestroyAPIView):
             return Response({"message": f"Could not find {self.model_name.lower()}."}, status=status.HTTP_404_NOT_FOUND)
             
     def put(self, request: Request, *args, **kwargs) -> Response:
+        try:
+            instance: Patient | Doctor = self.get_object()
+            data = request.data
+            serializer: PatientSerializer | DoctorSerializer = self.get_serializer(instance, data=data)
 
-        instance: Patient | Doctor = self.get_object()
-        data = request.data
-        serializer: PatientSerializer | DoctorSerializer = self.get_serializer(instance, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": f"{self.model_name} details updated."}, status=status.HTTP_200_OK)
+            
+            return Response(
+                {
+                    "message": "Failed to update details",
+                    "error": serializer.errors        
+                }, status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "message": f"Could not find {self.model_name.lower()}",   
+                }, status=status.HTTP_404_NOT_FOUND
+            )
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": f"{self.model_name} details updated."}, status=status.HTTP_200_OK)
-        
-        return Response(
-            {
-                "message": "Failed to update details",
-                "error": serializer.errors        
-            }, status=status.HTTP_400_BAD_REQUEST
-        )
 
     def delete(self, request: Request, *args, **kwargs) -> Response:
         try:
@@ -75,4 +80,4 @@ class BaseDetailsView(generics.RetrieveUpdateDestroyAPIView):
             instance.delete()
             return Response({"message": f"{self.model_name} details deleted."}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"message": f"Could not find {self.model_name.lower()}."}, status=status.HTTP_200_OK)
+            return Response({"message": f"Could not find {self.model_name.lower()}."}, status=status.HTTP_404_NOT_FOUND)
